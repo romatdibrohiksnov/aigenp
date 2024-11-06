@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片生成器</title>
+    <title>图像聊天机器人</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -56,27 +56,67 @@
             box-shadow: 0 0 8px rgba(74, 144, 226, 0.5);
         }
         button {
-            padding: 15px 40px; /* 增加按钮大小 */
-            background: rgba(255, 165, 0, 0.5); /* 橘色，设置透明度为50% */
-            color: white; /* 文字颜色 */
+            padding: 15px 40px;
+            background: rgba(255, 165, 0, 0.5);
+            color: white;
             border: none;
-            border-radius: 15px; /* 更大的圆角 */
-            font-size: 20px; /* 增加字体大小 */
+            border-radius: 15px;
+            font-size: 20px;
             cursor: pointer;
             margin-top: 10px;
             transition: background-color 0.3s, transform 0.3s;
         }
         button:hover {
-            background: rgba(255, 165, 0, 0.7); /* 悬停时加深颜色透明度 */
-            transform: scale(1.05); /* 悬停时放大 */
+            background: rgba(255, 165, 0, 0.7);
+            transform: scale(1.05);
+        }
+        .chat-history {
+            max-height: 400px;
+            overflow-y: auto;
+            width: 100%;
+            margin-top: 20px;
+            background-color: #2a2a2a;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .chat-history-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4a90e2;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .chat-entry {
+            display: flex;
+            margin-bottom: 15px;
+            align-items: flex-start;
+        }
+        .chat-entry .user-message {
+            background-color: #4a90e2;
+            padding: 10px;
+            border-radius: 10px;
+            color: white;
+            margin-right: 10px;
+            max-width: 70%;
+        }
+        .chat-entry .bot-response {
+            background-color: #333;
+            padding: 10px;
+            border-radius: 10px;
+            color: white;
+            max-width: 70%;
+        }
+        .bot-response .loading {
+            color: #ff9500;
+            font-weight: bold;
+            text-align: center;
+            font-size: 18px;
         }
         img {
-            margin-top: 20px;
             max-width: 100%;
             height: auto;
-            border: 2px solid #4a90e2;
             border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            margin-top: 10px;
         }
 
         /* 动态气泡效果 */
@@ -101,18 +141,22 @@
     </style>
 </head>
 <body>
-    <h1>图片生成器</h1>
+    <h1>图像聊天机器人</h1>
     <div class="container">
         <div class="input-section">
             <input type="text" id="promptInput" placeholder="输入提示内容" />
             <button id="generateButton">生成图片</button>
         </div>
-        <div class="image-section">
-            <img id="resultImage" src="" alt="生成的图片" />
+
+        <div class="chat-history" id="chatHistory">
+            <div class="chat-history-title">历史记录</div>
         </div>
     </div>
 
     <script>
+        // 存储聊天记录
+        let chatHistory = [];
+
         function createBubble() {
             const bubble = document.createElement('div');
             bubble.className = 'bubble';
@@ -131,12 +175,66 @@
         // 每500毫秒生成一个气泡
         setInterval(createBubble, 500);
 
+        // 更新聊天记录界面
+        function updateChatHistory() {
+            const chatHistoryContainer = document.getElementById('chatHistory');
+            chatHistoryContainer.innerHTML = '<div class="chat-history-title">历史记录</div>'; // 清空历史记录并加上标题
+            chatHistory.forEach(entry => {
+                const entryElement = document.createElement('div');
+                entryElement.classList.add('chat-entry');
+
+                const userMessage = document.createElement('div');
+                userMessage.classList.add('user-message');
+                userMessage.textContent = entry.prompt;
+                
+                const botResponse = document.createElement('div');
+                botResponse.classList.add('bot-response');
+                
+                if (entry.isLoading) {
+                    const loadingText = document.createElement('div');
+                    loadingText.classList.add('loading');
+                    loadingText.textContent = "生成中...";
+                    botResponse.appendChild(loadingText);
+                } else {
+                    const image = document.createElement('img');
+                    image.src = entry.imageUrl;
+                    botResponse.appendChild(image);
+                }
+
+                entryElement.appendChild(userMessage);
+                entryElement.appendChild(botResponse);
+
+                chatHistoryContainer.appendChild(entryElement);
+            });
+
+            // Scroll to bottom
+            chatHistoryContainer.scrollTop = chatHistoryContainer.scrollHeight;
+        }
+
+        // 生成图片并更新历史记录
         document.getElementById('generateButton').onclick = function() {
             const prompt = document.getElementById('promptInput').value;
+            if (!prompt) return; // 如果输入为空则不执行
+
+            // 在历史记录中添加加载中的条目
+            chatHistory.push({ prompt, isLoading: true });
+            updateChatHistory();
+
             const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1280&height=720&seed=42&nologo=true&private=true`;
-            
-            // 显示生成的图片
-            document.getElementById('resultImage').src = imageUrl;
+
+            // 模拟图像生成过程，延时更新
+            setTimeout(() => {
+                // 更新加载中的条目为生成的图像
+                const latestEntry = chatHistory[chatHistory.length - 1];
+                latestEntry.isLoading = false;
+                latestEntry.imageUrl = imageUrl;
+
+                // 更新聊天记录
+                updateChatHistory();
+            }, 2000); // 模拟 2 秒钟的延迟，实际可以根据网络速度调整
+
+            // 清空输入框
+            document.getElementById('promptInput').value = '';
         };
     </script>
 </body>
