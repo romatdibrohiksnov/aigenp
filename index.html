@@ -3,25 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图像聊天机器人</title>
+    <title>图像生成器V3.0</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #1c1c1c;
+            background: linear-gradient(135deg, #ff7f50, #ff6347); /* 渐变橙色背景 */
             color: #fff;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             height: 100vh;
             margin: 0;
-            padding: 20px;
-            overflow: hidden;
+            padding: 0;
+            overflow-y: auto; /* 启用页面滚动 */
             position: relative;
+            scroll-behavior: smooth; /* 平滑滚动 */
         }
         h1 {
             margin-bottom: 20px;
-            color: #4a90e2;
+            color: #fff;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5); /* 添加文字阴影 */
         }
         .container {
             display: flex;
@@ -29,9 +31,14 @@
             align-items: center;
             width: 100%;
             max-width: 800px;
+            background-color: rgba(0, 0, 0, 0.7); /* 半透明背景 */
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            margin-top: 20px;
         }
         .input-section, .image-section {
-            background-color: #2a2a2a;
+            background-color: rgba(40, 40, 40, 0.8); /* 半透明背景 */
             border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
             padding: 20px;
@@ -45,10 +52,10 @@
             border: 1px solid #444;
             border-radius: 10px;
             font-size: 16px;
-            transition: border-color 0.3s, box-shadow 0.3s;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             background-color: #333;
             color: #fff;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
         input:focus {
             border-color: #4a90e2;
@@ -57,32 +64,35 @@
         }
         button {
             padding: 15px 40px;
-            background: rgba(255, 165, 0, 0.5);
+            background: rgba(0, 255, 183, 0.8); /* 橙色背景，增加透明度 */
             color: white;
             border: none;
             border-radius: 15px;
             font-size: 20px;
             cursor: pointer;
             margin-top: 10px;
-            transition: background-color 0.3s, transform 0.3s;
+            transition: background-color 0.3s, transform 0.3s, opacity 0.3s;
         }
         button:hover {
-            background: rgba(255, 165, 0, 0.7);
-            transform: scale(1.05);
+            background: rgba(255, 165, 0, 1); /* 悬停时加深颜色 */
+            transform: scale(1.05); /* 放大效果 */
+        }
+        button:active {
+            opacity: 0.8; /* 点击时略微透明 */
         }
         .chat-history {
             max-height: 400px;
             overflow-y: auto;
             width: 100%;
             margin-top: 20px;
-            background-color: #2a2a2a;
+            background-color: rgba(40, 40, 40, 0.8); /* 半透明背景 */
             padding: 10px;
             border-radius: 10px;
         }
         .chat-history-title {
             font-size: 18px;
             font-weight: bold;
-            color: #4a90e2;
+            color: #ff7f50;
             margin-bottom: 15px;
             text-align: center;
         }
@@ -111,7 +121,25 @@
             font-weight: bold;
             text-align: center;
             font-size: 18px;
+            animation: dot-blink 1.5s infinite;
         }
+
+        /* 生成中... 的点点闪烁效果 */
+        @keyframes dot-blink {
+            0% {
+                content: "请稍等.";
+            }
+            33% {
+                content: "请稍等..";
+            }
+            66% {
+                content: "请稍等...";
+            }
+            100% {
+                content: "请稍等.";
+            }
+        }
+
         img {
             max-width: 100%;
             height: auto;
@@ -119,66 +147,77 @@
             margin-top: 10px;
         }
 
-        /* 动态气泡效果 */
-        .bubble {
-            position: absolute;
-            bottom: -100px;
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            animation: rise 10s infinite;
-            opacity: 0.5;
+        /* 设置面板 */
+        .settings-panel {
+            display: none;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            width: 80%;
+            max-width: 400px;
+            margin-top: 20px;
         }
-        @keyframes rise {
-            0% {
-                transform: translateX(0) translateY(0);
-                opacity: 0.5;
-            }
-            100% {
-                transform: translateX(50px) translateY(-800px);
-                opacity: 0;
-            }
+
+        .settings-panel input[type="range"] {
+            width: 100%;
+        }
+
+        .settings-panel button {
+            background-color: #4CAF50; /* 绿色 */
+            margin-top: 10px;
+        }
+
+        #openSettingsButton {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
         }
     </style>
 </head>
 <body>
-    <h1>图像聊天机器人</h1>
+    <h1>图像生成器V3.0</h1>
     <div class="container">
+        <!-- 输入框和生成按钮 -->
         <div class="input-section">
             <input type="text" id="promptInput" placeholder="输入提示内容" />
             <button id="generateButton">生成图片</button>
         </div>
 
+        <!-- 设置面板 -->
+        <div class="settings-panel" id="settingsPanel">
+            <h3>图像设置</h3>
+            <label for="imageSize">图像大小: </label>
+            <input type="range" id="imageSize" min="300" max="1500" value="720" />
+            <span id="imageSizeValue">720</span>px
+
+            <br/>
+
+            <button id="closeSettingsButton">关闭设置</button>
+        </div>
+
+        <!-- 显示生成的图片 -->
+        <div class="image-section">
+            <img id="resultImage" src="" alt="生成的图片" />
+        </div>
+
+        <!-- 历史记录 -->
         <div class="chat-history" id="chatHistory">
             <div class="chat-history-title">历史记录</div>
         </div>
+
+        <!-- 设置按钮 -->
+        <button id="openSettingsButton">设置</button>
     </div>
 
     <script>
-        // 存储聊天记录
         let chatHistory = [];
 
-        function createBubble() {
-            const bubble = document.createElement('div');
-            bubble.className = 'bubble';
-            const size = Math.random() * 60 + 20; // 随机大小
-            bubble.style.width = `${size}px`;
-            bubble.style.height = `${size}px`;
-            bubble.style.left = `${Math.random() * 100}vw`;
-            document.body.appendChild(bubble);
-
-            // 动画结束后移除气泡
-            bubble.addEventListener('animationend', () => {
-                bubble.remove();
-            });
-        }
-
-        // 每500毫秒生成一个气泡
-        setInterval(createBubble, 500);
-
-        // 更新聊天记录界面
+        // 更新历史记录
         function updateChatHistory() {
             const chatHistoryContainer = document.getElementById('chatHistory');
-            chatHistoryContainer.innerHTML = '<div class="chat-history-title">历史记录</div>'; // 清空历史记录并加上标题
+            chatHistoryContainer.innerHTML = '<div class="chat-history-title">历史记录</div>';
             chatHistory.forEach(entry => {
                 const entryElement = document.createElement('div');
                 entryElement.classList.add('chat-entry');
@@ -186,52 +225,68 @@
                 const userMessage = document.createElement('div');
                 userMessage.classList.add('user-message');
                 userMessage.textContent = entry.prompt;
-                
+
                 const botResponse = document.createElement('div');
                 botResponse.classList.add('bot-response');
-                
+
                 if (entry.isLoading) {
-                    const loadingText = document.createElement('div');
+                    const loadingText = document.createElement('span');
                     loadingText.classList.add('loading');
-                    loadingText.textContent = "生成中...";
-                    botResponse.appendChild(loadingText);
-                } else {
+                    botResponse.appendChild(loadingText);  // 显示加载中
+                } else if (entry.imageUrl) {
                     const image = document.createElement('img');
                     image.src = entry.imageUrl;
-                    botResponse.appendChild(image);
+                    botResponse.appendChild(image); // 显示生成的图像
                 }
 
                 entryElement.appendChild(userMessage);
                 entryElement.appendChild(botResponse);
-
                 chatHistoryContainer.appendChild(entryElement);
-            });
 
-            // Scroll to bottom
-            chatHistoryContainer.scrollTop = chatHistoryContainer.scrollHeight;
+                // 滚动到历史记录的底部，确保最新消息可见
+                chatHistoryContainer.scrollTop = chatHistoryContainer.scrollHeight;
+            });
         }
 
-        // 生成图片并更新历史记录
+        // 更新滑动条的值
+        document.getElementById('imageSize').oninput = function() {
+            document.getElementById('imageSizeValue').textContent = this.value;
+        };
+
+        // 打开设置面板
+        document.getElementById('openSettingsButton').onclick = function() {
+            document.getElementById('settingsPanel').style.display = 'block';
+        };
+
+        // 关闭设置面板
+        document.getElementById('closeSettingsButton').onclick = function() {
+            document.getElementById('settingsPanel').style.display = 'none';
+        };
+
+        // 生成图像
         document.getElementById('generateButton').onclick = function() {
             const prompt = document.getElementById('promptInput').value;
             if (!prompt) return; // 如果输入为空则不执行
 
-            // 在历史记录中添加加载中的条目
+            // 添加加载中的历史记录
             chatHistory.push({ prompt, isLoading: true });
             updateChatHistory();
 
-            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1280&height=720&seed=42&nologo=true&private=true`;
+            const imageSize = document.getElementById('imageSize').value;
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${imageSize}&height=${imageSize}&seed=42&nologo=true&private=true`;
 
-            // 模拟图像生成过程，延时更新
+            // 模拟图像生成延时
             setTimeout(() => {
-                // 更新加载中的条目为生成的图像
                 const latestEntry = chatHistory[chatHistory.length - 1];
                 latestEntry.isLoading = false;
                 latestEntry.imageUrl = imageUrl;
 
-                // 更新聊天记录
-                updateChatHistory();
-            }, 2000); // 模拟 2 秒钟的延迟，实际可以根据网络速度调整
+                updateChatHistory();  // 更新历史记录
+
+                // 显示生成的图片
+                document.getElementById('resultImage').src = imageUrl;
+
+            }, 2000); // 模拟生成延时，实际延迟根据网络情况调整
 
             // 清空输入框
             document.getElementById('promptInput').value = '';
